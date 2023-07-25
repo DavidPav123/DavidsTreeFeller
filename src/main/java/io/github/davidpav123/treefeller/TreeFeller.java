@@ -1,22 +1,7 @@
 package io.github.davidpav123.treefeller;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
-import java.util.logging.Level;
-
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import objs.Configuration;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -34,126 +19,71 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
-import objs.Configuration;
-import objs.Updater;
+import java.io.IOException;
+import java.util.*;
 
 public class TreeFeller extends JavaPlugin implements Listener {
+    // Options
+    private static final String STRG_MAX_BLOCKS = "destroy limit";
+    private static final String DESC_MAX_BLOCKS = "Sets the maximum number of logs and leaves that can be destroyed at once. -1 to unlimit.";
+    private static final String STRG_AXE_NEEDED = "axe needed";
+    private static final String DESC_AXE_NEEDED = "Sets if an axe is required to Cut down trees at once.";
+    private static final String STRG_DAMAGE_AXE = "damage axe";
+    private static final String DESC_DAMAGE_AXE = "If \"" + STRG_AXE_NEEDED + "\" is set to true, sets if axes used are damaged or not. If \"" + STRG_AXE_NEEDED + "\" is false, this option is ignored.";
+    private static final String STRG_BREAK_AXE = "break axe";
+    private static final String DESC_BREAK_AXE = "If \"" + STRG_AXE_NEEDED + "\" and \"" + STRG_DAMAGE_AXE + "\" are set to true, sets if the axe should not be broken. Otherwise this option is ignored.";
+    private static final String STRG_REPLANT = "replant";
+    private static final String DESC_REPLANT = "Sets if trees should be replanted automatically.";
+    private static final String STRG_INVINCIBLE_REPLANT = "invincible replant";
+    private static final String DESC_INVINCIBLE_REPLANT = "Sets if saplings replanted by this plugin should be unbreakable by regular players (including the block beneath).";
+    private static final String META_INV_REPL = "inv_repl";
+    private static final String STRG_ADMIT_NETHER_TREES = "cut nether \"trees\"";
+    private static final String DESC_ADMIT_NETHER_TREES = "Sets if nether trees should be treated as regular trees, and cut down entirely.";
+    private static final String STRG_START_ACTIVATED = "start activated";
+    private static final String DESC_START_ACTIVATED = "Sets if this plugin starts activated for players when they enter the server. If false, players will need to use /tf toggle to activate it for themselves.";
+    private static final String STRG_JOIN_MSG = "initial message";
+    private static final String DESC_JOIN_MSG = "If true, it sends each player a message about /tf toggle when they join the server. The message changes depending on the value of \"" + STRG_START_ACTIVATED + "\".";
+    private static final String STRG_IGNORE_LEAVES = "ignore leaves";
+    private static final String DESC_IGNORE_LEAVES = "If true, leaves will not be destroyed and will not connect logs. In vanilla terrain forests this will prevent several trees to be cut down at once, but it will leave most big oak trees floating.";
+    private static final String STRG_SNEAKING_PREVENTION = "crouch for prevention";
+    private static final String DESC_SNEAKING_PREVENTION = "If true, crouching players won't trigger this plugin or only crouching players will. If \"inverted\", players will have to crouch to destroy trees instantly. False by default so updating from previous versions won't change this behaviour without notice.";
+    // Metadata
+    private static final String PLAYER_ENABLE_META = "davidpav_tree_feller_meta_disable";
     private final PluginDescriptionFile desc = getDescription();
-
     // Colors
     private final ChatColor mainColor = ChatColor.BLUE;
     private final ChatColor textColor = ChatColor.WHITE;
     private final ChatColor accentColor = ChatColor.GOLD;
     private final ChatColor errorColor = ChatColor.DARK_RED;
     private final String header = mainColor + "[" + desc.getName() + "] " + textColor;
-
-
+    // Messages
+    private final String joinMensajeActivated = header + "Remember " + accentColor + "{player}" + textColor + ", you can use " + accentColor + "/tf toggle" + textColor + " to avoid breaking things made of logs.";
+    private final String joinMensajeDeactivated = header + "Remember " + accentColor + "{player}" + textColor + ", you can use " + accentColor + "/tf toggle" + textColor + " to cut down trees faster.";
     // Files
     private Configuration config;
-    private File fExtraLogs;
-    private File fExtraLeaves;
-
-    // Options
-    private static final String STRG_MAX_BLOCKS = "destroy limit";
     private int maxBlocks = -1;
-    private static final String DESC_MAX_BLOCKS = "Sets the maximum number of logs and leaves that can be destroyed at once. -1 to unlimit.";
-
-
-    private static final String STRG_AXE_NEEDED = "axe needed";
     private boolean axeNeeded = true;
-    private static final String DESC_AXE_NEEDED = "Sets if an axe is required to Cut down trees at once.";
-
-    private static final String STRG_DAMAGE_AXE = "damage axe";
     private boolean damageAxe = true;
-    private static final String DESC_DAMAGE_AXE = "If \"" + STRG_AXE_NEEDED
-            + "\" is set to true, sets if axes used are damaged or not. If \"" + STRG_AXE_NEEDED
-            + "\" is false, this option is ignored.";
-
-    private static final String STRG_BREAK_AXE = "break axe";
     private boolean breakAxe = false;
-    private static final String DESC_BREAK_AXE = "If \"" + STRG_AXE_NEEDED + "\" and \"" + STRG_DAMAGE_AXE
-            + "\" are set to true, sets if the axe should not be broken. Otherwise this option is ignored.";
-
-    private static final String STRG_REPLANT = "replant";
     private boolean replant = true;
-    private static final String DESC_REPLANT = "Sets if trees should be replanted automatically.";
-
-    private static final String STRG_INVINCIBLE_REPLANT = "invincible replant";
     private boolean invincibleReplant = false;
-    private static final String DESC_INVINCIBLE_REPLANT = "Sets if saplings replanted by this plugin should be unbreakable by regular players (including the block beneath).";
-    private static final String META_INV_REPL = "inv_repl";
-
-    private static final String STRG_ADMIT_NETHER_TREES = "cut nether \"trees\"";
-    private boolean admitNetherTrees = false;
-    private static final String DESC_ADMIT_NETHER_TREES = "Sets if the new 1.16 nether trees should be treated as regular trees, and therefore cut down entirely as well.";
-
-    private static final String STRG_START_ACTIVATED = "start activated";
+    private boolean admitNetherTrees = true;
     private boolean startActivated = true;
-    private static final String DESC_START_ACTIVATED = "Sets if this plugin starts activated for players when they enter the server. If false, players will need to use /tc toggle to activate it for themselves.";
-
-    private static final String STRG_JOIN_MSG = "initial message";
     private boolean joinMsg = true;
-    private static final String DESC_JOIN_MSG = "If true, it sends each player a message about /tc toggle when they join the server. The message changes depending on the value of \""
-            + STRG_START_ACTIVATED + "\".";
-
-    private static final String STRG_IGNORE_LEAVES = "ignore leaves";
     private boolean ignoreLeaves = false;
-    private static final String DESC_IGNORE_LEAVES = "If true, leaves will not be destroyed and will not connect logs. In vanilla terrain forests this will prevent several trees to be cut down at once, but it will leave most big oak trees floating.";
-
-    private static final String STRG_SNEAKING_PREVENTION = "crouch for prevention";
     private String sneakingPrevention = "false";
-    private static final String DESC_SNEAKING_PREVENTION = "If true, crouching players won't trigger this plugin or only crouching players will. If \"inverted\", players will have to crouch to destroy trees instantly. False by default so updating from previous versions won't change this behaviour without notice.";
-
-    // TODO Extra logs/leaves
-    private final JSONParser parser = new JSONParser();
-    private Material[] extraLogs = new Material[0], extraLeaves = new Material[0];
-
-    // Messages
-    private final String joinMensajeActivated = header + "Remember " + accentColor + "{player}" + textColor
-            + ", you can use " + accentColor + "/tc toggle" + textColor + " to avoid breaking things made of logs.";
-    private final String joinMensajeDeactivated = header + "Remember " + accentColor + "{player}" + textColor
-            + ", you can use " + accentColor + "/tc toggle" + textColor + " to cut down trees faster.";
-
-    // Metadata
-    private static final String PLAYER_ENABLE_META = "cristichi_treecap_meta_disable";
-
-    // Updater
-    private static final int ID = 294976;
-    private static Updater updater;
-    public static boolean update = false;
-
-    private boolean checkUpdate() {
-        try {
-            updater = new Updater(this, ID, this.getFile(), Updater.UpdateType.NO_DOWNLOAD, false);
-            update = updater.getResult() == Updater.UpdateResult.UPDATE_AVAILABLE;
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        return update;
-    }
+    private HashMap<Material, List<Material>> treeMap;
 
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
 
-        if (checkUpdate()) {
-            getServer().getConsoleSender()
-                    .sendMessage(header + ChatColor.GREEN
-                            + "An update is available, use /tc update to update to the lastest version (from v"
-                            + desc.getVersion() + " to v" + updater.getRemoteVersion() + ")");
-        }
-
-        config = new Configuration("plugins/CrisTreeCapitator/config.yml", "Cristichi's TreeCapitator");
+        config = new Configuration("plugins/DavidsTreeFeller/config.yml", "Davids Tree Feller");
         loadConfiguration();
         saveConfiguration();
-
-        loadExtraJSONs();
 
         getLogger().info("Enabled");
     }
@@ -196,106 +126,8 @@ public class TreeFeller extends JavaPlugin implements Listener {
         sneakingPrevention = config.getString(STRG_SNEAKING_PREVENTION, defaultSP).toLowerCase();
         config.setInfo(STRG_SNEAKING_PREVENTION, DESC_SNEAKING_PREVENTION);
 
-        if (!sneakingPrevention.equalsIgnoreCase("true") && !sneakingPrevention.equals("inverted")
-                && !sneakingPrevention.equals("false")) {
+        if (!sneakingPrevention.equalsIgnoreCase("true") && !sneakingPrevention.equals("inverted") && !sneakingPrevention.equals("false")) {
             sneakingPrevention = defaultSP;
-        }
-    }
-
-    private void loadExtraJSONs() {
-        fExtraLogs = new File("plugins/CrisTreeCapitator/extra_logs.json");
-        if (fExtraLogs.exists()) {
-            try (FileReader reader = new FileReader(fExtraLogs)) {
-                JSONObject jsonObject = (JSONObject) parser.parse(reader);
-                JSONArray JArrayLogs = (JSONArray) jsonObject.get("logs");
-                Object[] strExtraLogs = JArrayLogs.toArray();
-                extraLogs = new Material[strExtraLogs.length];
-                for (int i = 0; i < strExtraLogs.length; i++) {
-                    extraLogs[i] = Material.getMaterial(strExtraLogs[i].toString());
-                    if (extraLogs[i] == null) {
-                        getLogger().warning("Material \"" + strExtraLogs[i]
-                                + "\" in extra_logs.json could not be recognized as any in-game Material.");
-                    }
-                }
-                getLogger().log(Level.INFO, "Logs from JSON: " + Arrays.toString(extraLogs));
-            } catch (IOException e) {
-                getLogger().warning(
-                        "extra_logs.json could not be read. Only the default logs (+ nether) will be detected.");
-                getLogger().throwing(this.getClass().getCanonicalName(), "onEnable", e);
-                extraLogs = new Material[0];
-            } catch (ParseException e) {
-                getLogger().warning(
-                        "extra_logs.json is an invalid JSON. Please make sure the contents of the file are a valid JSON format. Only the default logs (+ nether) will be detected.");
-                getLogger().throwing(this.getClass().getCanonicalName(), "onEnable", e);
-                extraLogs = new Material[0];
-            }
-        } else {
-            try {
-                fExtraLogs.createNewFile();
-                JSONObject jsonData = new JSONObject();
-                JSONArray jsonArrayLogs = new JSONArray();
-                jsonArrayLogs.add("OAK_LOG");
-                jsonArrayLogs.add("OAK_LOG");
-                jsonArrayLogs.add("OAK_LOG");
-                jsonArrayLogs.add("OAK_LOG");
-                jsonData.put("logs", jsonArrayLogs);
-                FileWriter fw = new FileWriter(fExtraLogs);
-                fw.write(jsonData.toJSONString());
-                fw.close();
-            } catch (IOException e) {
-                getLogger().warning(
-                        "extra_logs.json could not be created. Only the default logs (+ nether) will be detected.");
-                getLogger().throwing(this.getClass().getCanonicalName(), "onEnable", e);
-                extraLogs = new Material[0];
-            }
-        }
-
-        fExtraLeaves = new File("plugins/CrisTreeCapitator/extra_leaves.json");
-        if (fExtraLeaves.exists()) {
-            try (FileReader reader = new FileReader(fExtraLeaves)) {
-                JSONObject jsonObject = (JSONObject) parser.parse(reader);
-                JSONArray JArrayLeaves = (JSONArray) jsonObject.get("leaves");
-                Object[] strExtraLeaves = JArrayLeaves.toArray();
-                extraLeaves = new Material[strExtraLeaves.length];
-                for (int i = 0; i < strExtraLeaves.length; i++) {
-                    extraLeaves[i] = Material.getMaterial(strExtraLeaves[i].toString());
-                    if (extraLeaves[i] == null) {
-                        getLogger().warning("Material \"" + strExtraLeaves[i]
-                                + "\" in extra_leaves.json could not be recognized as any in-game Material.");
-                    }
-                }
-                getLogger().log(Level.INFO, "Leaves from JSON: " + Arrays.toString(extraLeaves));
-            } catch (IOException e) {
-                getLogger().warning(
-                        "extra_leaves.json could not be read. Only the default leaves (+ nether) will be detected.");
-                getLogger().throwing(this.getClass().getCanonicalName(), "onEnable", e);
-                extraLeaves = new Material[0];
-            } catch (ParseException e) {
-                getLogger().warning(
-                        "extra_leaves.json is an invalid JSON. Please make sure the contents of the file are a valid JSON format. Only the default leaves (+ nether) will be detected.");
-                getLogger().throwing(this.getClass().getCanonicalName(), "onEnable", e);
-                extraLeaves = new Material[0];
-            }
-        } else {
-            try {
-                fExtraLeaves.createNewFile();
-                JSONObject jsonData = new JSONObject();
-                JSONArray jsonArrayLeaves = new JSONArray();
-                jsonArrayLeaves.add("OAK_LEAVES");
-                jsonArrayLeaves.add("OAK_LEAVES");
-                jsonArrayLeaves.add("OAK_LEAVES");
-                jsonArrayLeaves.add("OAK_LEAVES");
-                jsonData.put("leaves", jsonArrayLeaves);
-                FileWriter fw = new FileWriter(fExtraLeaves);
-                fw.write(jsonData.toJSONString());
-                fw.close();
-            } catch (IOException e) {
-                getLogger().warning(
-                        "extra_leaves.json could not be created. Only the default logs (+ nether) will be detected.");
-                getLogger().throwing(this.getClass().getCanonicalName(), "onEnable", e);
-                // Bukkit.getPluginManager().disablePlugin(this);
-                extraLeaves = new Material[0];
-            }
         }
     }
 
@@ -333,10 +165,8 @@ public class TreeFeller extends JavaPlugin implements Listener {
             for (MetadataValue meta : metas) {
                 enabled = meta.asBoolean();
             }
-            if (enabled)
-                p.sendMessage(joinMensajeActivated.replace("{player}", p.getDisplayName()));
-            else
-                p.sendMessage(joinMensajeDeactivated.replace("{player}", p.getDisplayName()));
+            if (enabled) p.sendMessage(joinMensajeActivated.replace("{player}", p.getDisplayName()));
+            else p.sendMessage(joinMensajeDeactivated.replace("{player}", p.getDisplayName()));
         }
     }
 
@@ -347,11 +177,7 @@ public class TreeFeller extends JavaPlugin implements Listener {
         final Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
 
-        if (invincibleReplant && !(canPlant(
-                firstBrokenB.getWorld().getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() - 1, firstBrokenB.getZ()),
-                material)
-                || canPlant(firstBrokenB, firstBrokenB.getWorld()
-                .getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() + 1, firstBrokenB.getZ()).getType()))) {
+        if (invincibleReplant && !(canPlant(firstBrokenB.getWorld().getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() - 1, firstBrokenB.getZ()), material) || canPlant(firstBrokenB, firstBrokenB.getWorld().getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() + 1, firstBrokenB.getZ()).getType()))) {
             List<MetadataValue> fbbReplantMetas = firstBrokenB.getMetadata(META_INV_REPL);
             for (MetadataValue replantMeta : fbbReplantMetas) {
                 if (replantMeta.asBoolean()) {
@@ -367,14 +193,10 @@ public class TreeFeller extends JavaPlugin implements Listener {
             }
         }
         firstBrokenB.removeMetadata(META_INV_REPL, this);
-        firstBrokenB.getWorld().getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() - 1, firstBrokenB.getZ())
-                .removeMetadata(META_INV_REPL, this);
-        firstBrokenB.getWorld().getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() + 1, firstBrokenB.getZ())
-                .removeMetadata(META_INV_REPL, this);
+        firstBrokenB.getWorld().getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() - 1, firstBrokenB.getZ()).removeMetadata(META_INV_REPL, this);
+        firstBrokenB.getWorld().getBlockAt(firstBrokenB.getX(), firstBrokenB.getY() + 1, firstBrokenB.getZ()).removeMetadata(META_INV_REPL, this);
 
-        if ((sneakingPrevention.equals("true") && player.getPose().equals(Pose.SNEAKING))
-                || (sneakingPrevention.equals("inverted") && !player.getPose().equals(Pose.SNEAKING))
-                || (!player.getGameMode().equals(GameMode.SURVIVAL))) {
+        if ((sneakingPrevention.equals("true") && player.getPose().equals(Pose.SNEAKING)) || (sneakingPrevention.equals("inverted") && !player.getPose().equals(Pose.SNEAKING)) || (!player.getGameMode().equals(GameMode.SURVIVAL))) {
             return;
         }
 
@@ -384,7 +206,7 @@ public class TreeFeller extends JavaPlugin implements Listener {
             enabled = meta.asBoolean();
         }
 
-        if (enabled && !event.isCancelled() && isLog(material) && player.hasPermission("cristreecapitator.user")) {
+        if (enabled && !event.isCancelled() && isLog(material) && player.hasPermission("davidstreefeller.user")) {
             try {
                 // Yes it could use some tuning
                 if (!tool.getType().name().contains("_AXE")) {
@@ -392,8 +214,7 @@ public class TreeFeller extends JavaPlugin implements Listener {
                 }
 
                 boolean cutDown = !axeNeeded || (tool != null && tool.getType().name().endsWith("_AXE"));
-                if (cutDown && axeNeeded && !breakAxe && (tool.hasItemMeta() && tool.getItemMeta() instanceof Damageable
-                        && ((Damageable) tool.getItemMeta()).getDamage() >= tool.getType().getMaxDurability())) {
+                if (cutDown && axeNeeded && !breakAxe && (tool.hasItemMeta() && tool.getItemMeta() instanceof Damageable && ((Damageable) tool.getItemMeta()).getDamage() >= tool.getType().getMaxDurability())) {
                     cutDown = false;
                 }
                 if (cutDown) {
@@ -405,16 +226,14 @@ public class TreeFeller extends JavaPlugin implements Listener {
                     event.setCancelled(true);
                 }
             } catch (StackOverflowError e) {
-                Bukkit.getLogger().throwing("TreeCapitator.java", "onBlockBreak(Event)", e);
+                Bukkit.getLogger().throwing("TreeFeller.java", "onBlockBreak(Event)", e);
             }
         }
 
     }
 
-    private int breakRecNoReplant(Player player, ItemStack tool, Block lego, Material type, int destroyed,
-                                  boolean stop) {
-        if (stop)
-            return destroyed;
+    private int breakRecNoReplant(Player player, ItemStack tool, Block lego, Material type, int destroyed, boolean stop) {
+        if (stop) return destroyed;
         Material material = lego.getBlockData().getMaterial();
         if (isLog(material) || isLeaves(material)) {
             if (destroyed > maxBlocks && maxBlocks > 0) {
@@ -462,8 +281,7 @@ public class TreeFeller extends JavaPlugin implements Listener {
     }
 
     private int breakRecReplant(Player player, ItemStack tool, Block lego, Material type, int destroyed, boolean stop) {
-        if (stop || (maxBlocks > 0 && destroyed > maxBlocks))
-            return destroyed;
+        if (stop || (maxBlocks > 0 && destroyed > maxBlocks)) return destroyed;
         Material material = lego.getBlockData().getMaterial();
         if (isLog(material) || isLeaves(material)) {
             World mundo = lego.getWorld();
@@ -471,41 +289,20 @@ public class TreeFeller extends JavaPlugin implements Listener {
             Block below = mundo.getBlockAt(x, y - 1, z);
 
             if (canPlant(below, lego.getType())) {
-                System.out.println("replant type: " + lego.getType().name());
                 Material saplingType = null;
                 switch (lego.getType()) {
-                    case ACACIA_LOG:
-                        saplingType = Material.ACACIA_SAPLING;
-                        break;
-                    case BIRCH_LOG:
-                        saplingType = Material.BIRCH_SAPLING;
-                        break;
-                    case DARK_OAK_LOG:
-                        saplingType = Material.DARK_OAK_SAPLING;
-                        break;
-                    case JUNGLE_LOG:
-                        saplingType = Material.JUNGLE_SAPLING;
-                        break;
-                    case OAK_LOG:
-                        saplingType = Material.OAK_SAPLING;
-                        break;
-                    case SPRUCE_LOG:
-                        saplingType = Material.SPRUCE_SAPLING;
-                        break;
-                    case MANGROVE_LOG:
-                        saplingType = Material.MANGROVE_PROPAGULE;
-                        break;
-                    case CRIMSON_STEM:
-                        saplingType = Material.CRIMSON_FUNGUS;
-                        break;
-                    case WARPED_STEM:
-                        saplingType = Material.WARPED_FUNGUS;
-                        break;
-                    case CHERRY_LOG:
-                        saplingType = Material.CHERRY_SAPLING;
-                        break;
-                    default:
-                        break;
+                    case ACACIA_LOG -> saplingType = Material.ACACIA_SAPLING;
+                    case BIRCH_LOG -> saplingType = Material.BIRCH_SAPLING;
+                    case DARK_OAK_LOG -> saplingType = Material.DARK_OAK_SAPLING;
+                    case JUNGLE_LOG -> saplingType = Material.JUNGLE_SAPLING;
+                    case OAK_LOG -> saplingType = Material.OAK_SAPLING;
+                    case SPRUCE_LOG -> saplingType = Material.SPRUCE_SAPLING;
+                    case MANGROVE_LOG -> saplingType = Material.MANGROVE_PROPAGULE;
+                    case CRIMSON_STEM -> saplingType = Material.CRIMSON_FUNGUS;
+                    case WARPED_STEM -> saplingType = Material.WARPED_FUNGUS;
+                    case CHERRY_LOG -> saplingType = Material.CHERRY_SAPLING;
+                    default -> {
+                    }
                 }
 
                 if (damageItem(player, tool, material)) {
@@ -564,56 +361,24 @@ public class TreeFeller extends JavaPlugin implements Listener {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, Command command, @NotNull String label, String[] args) {
         label = label.toLowerCase();
-        boolean bueno = label.equals(command.getLabel());
+        boolean good = label.equals(command.getLabel());
         String[] cmds = command.getAliases().toArray(new String[]{});
-        for (int i = 0; i < cmds.length && !bueno; i++) {
+        for (int i = 0; i < cmds.length && !good; i++) {
             cmds[i] = cmds[i].toLowerCase();
             if (label.equals(cmds[i])) {
-                bueno = true;
+                good = true;
             }
         }
 
-        boolean sinPermiso = false;
-        if (bueno) {
+        boolean noPerms = false;
+        if (good) {
             if (args.length > 0) {
                 switch (args[0].toLowerCase()) {
-
-                    case "help":
-                        sender.sendMessage(header + "Commands:\n",
-                                accentColor + "/" + label + " help: " + textColor + "Shows this help message.",
-                                accentColor + "/" + label + " toggle <true/false>: " + textColor
-                                        + "Toggles the plugin to work or not on you.",
-                                accentColor + "/" + label + " settings: " + textColor
-                                        + "Checks the values set in the configuration.");
-
-                        break;
-
-                    case "version":
-                        sender.sendMessage(header + getName() + " v" + desc.getVersion());
-                        break;
-
-                    case "config":
-                    case "values":
-                    case "settings":
-                        sender.sendMessage(header + "Values:",
-                                accentColor + "Join Message: " + textColor + (joinMsg ? "show" : "not show"),
-                                accentColor + "Starts Activated: " + textColor + (startActivated ? "yes" : "no"),
-                                accentColor + "Limit: " + textColor + (maxBlocks < 0 ? "unbounded" : maxBlocks),
-                                accentColor + "Replant: " + textColor + (replant ? "enabled" : "disabled"),
-                                accentColor + "Invincible replant: " + textColor
-                                        + (invincibleReplant ? "enabled" : "disabled"),
-                                accentColor + "Axe Needed: " + textColor + (axeNeeded ? "yes" : "no"),
-                                accentColor + "Axe Damaged: " + textColor + (axeNeeded ? "yes" : "no"),
-                                accentColor + "Damage Axe: " + textColor + (damageAxe ? "yes" : "no"),
-                                accentColor + "Break Axe: " + textColor + (breakAxe ? "yes" : "no"),
-                                accentColor + "Ignore Leaves: " + textColor + (ignoreLeaves ? "yes" : "no"),
-                                accentColor + "Crouch Prevention: " + textColor + (sneakingPrevention.equals("true") ? "yes"
-                                        : (sneakingPrevention.equals("false") ? "no" : "inverted")));
-                        break;
-
-                    case "toggle":
+                    case "help" ->
+                            sender.sendMessage(header + "Commands:\n", accentColor + "/" + label + " help: " + textColor + "Shows this help message.", accentColor + "/" + label + " toggle <true/false>: " + textColor + "Toggles tree felling on and off.");
+                    case "toggle" -> {
                         if (sender instanceof Player) {
                             boolean enabled = startActivated;
                             List<MetadataValue> metas = ((Player) sender).getMetadata(PLAYER_ENABLE_META);
@@ -622,38 +387,34 @@ public class TreeFeller extends JavaPlugin implements Listener {
                             }
                             enabled = !enabled;
                             ((Player) sender).setMetadata(PLAYER_ENABLE_META, new FixedMetadataValue(this, enabled));
-                            sender.sendMessage(
-                                    header + " You " + (enabled ? "enabled" : "disabled") + " quick log destroy.");
+                            sender.sendMessage(header + " You " + (enabled ? "enabled" : "disabled") + " tree felling.");
                         } else {
                             sender.sendMessage(header + "This command can only be used by players");
                         }
-                        break;
-
-                    default:
-                        sender.sendMessage(
-                                header + errorColor + "Command not found, please check \"/" + label + " help\".");
-                        break;
+                    }
+                    default ->
+                            sender.sendMessage(header + errorColor + "Command not found, please check \"/" + label + " help\".");
                 }
             } else {
                 return false;
             }
         }
 
-        if (sinPermiso) {
+        if (noPerms) {
             sender.sendMessage(header + errorColor + "You don't have permission to use this command.");
         }
-        return bueno;
+        return good;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> list = new ArrayList<>();
         switch (args.length) {
-            case 0:
+            case 0 -> {
                 list.add("help");
                 list.add("toggle");
-                break;
-            case 1:
+            }
+            case 1 -> {
                 args[0] = args[0].toLowerCase();
                 switch (args[0]) {
                     case "help":
@@ -661,15 +422,13 @@ public class TreeFeller extends JavaPlugin implements Listener {
                         break;
 
                     default:
-                        if ("help".contains(args[0]))
-                            list.add("help");
-                        if ("toggle".contains(args[0]))
-                            list.add("toggle");
+                        if ("help".contains(args[0])) list.add("help");
+                        if ("toggle".contains(args[0])) list.add("toggle");
                         break;
                 }
-                break;
-            default:
-                break;
+            }
+            default -> {
+            }
         }
         return list;
     }
@@ -719,36 +478,18 @@ public class TreeFeller extends JavaPlugin implements Listener {
     }
 
     private boolean isLog(Material mat) {
-        for (int i = 0; i < extraLogs.length; i++) {
-            if (extraLogs[i].equals(mat)) {
-                return true;
-            }
-        }
         boolean ret = !mat.name().contains("STRIPPED_") && mat.name().contains("_LOG");
-        if (!ret && admitNetherTrees)
-            return mat.name().equals("CRIMSON_STEM") || mat.name().equals("WARPED_STEM");
+        if (!ret && admitNetherTrees) return mat.name().equals("CRIMSON_STEM") || mat.name().equals("WARPED_STEM");
         return ret;
     }
 
     private boolean isLeaves(Material mat) {
-        if (ignoreLeaves)
-            return false;
-        for (int i = 0; i < extraLeaves.length; i++) {
-            if (extraLeaves[i].equals(mat)) {
-                return true;
-            }
-        }
+        if (ignoreLeaves) return false;
         boolean ret = mat.name().contains("LEAVES");
         if (!ret && admitNetherTrees)
-            return ret || mat.name().equals("NETHER_WART_BLOCK") || mat.name().equals("WARPED_WART_BLOCK")
-                    || mat.name().equals("SHROOMLIGHT");
+            return mat.name().equals("NETHER_WART_BLOCK") || mat.name().equals("WARPED_WART_BLOCK") || mat.name().equals("SHROOMLIGHT");
         return ret;
     }
-
-    /**
-     * <Block below, Log material>
-     */
-    private HashMap<Material, List<Material>> treeMap;
 
     private boolean canPlant(Block below, Material woodType) {
         if (treeMap == null) {
@@ -802,10 +543,7 @@ public class TreeFeller extends JavaPlugin implements Listener {
                 // Material doesn't exist in this version
             }
             for (Material wood : woods) {
-                treeMap.put(wood,
-                        new ArrayList<>(Arrays.asList(Material.DIRT, Material.GRASS_BLOCK, Material.COARSE_DIRT,
-                                Material.PODZOL, Material.MYCELIUM, Material.ROOTED_DIRT, Material.MOSS_BLOCK,
-                                Material.FARMLAND, Material.MUD)));
+                treeMap.put(wood, new ArrayList<>(Arrays.asList(Material.DIRT, Material.GRASS_BLOCK, Material.COARSE_DIRT, Material.PODZOL, Material.MYCELIUM, Material.ROOTED_DIRT, Material.MOSS_BLOCK, Material.FARMLAND, Material.MUD)));
             }
 
             treeMap.get(Material.MANGROVE_LOG).add(Material.CLAY);
