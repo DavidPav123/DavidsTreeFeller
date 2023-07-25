@@ -1,6 +1,19 @@
 name: DavidsTreeFeller
 version: 1.0
 main: io.github.davidpav123.treefeller.TreeFeller
-description: A plugin that allows you to chop down trees
+description: A plugin that allows you to chop down a whole tree by breaking the bottom block.
 author: DavidPav
 api-version: '1.20'
+commands:
+  tf:
+    description: Controls DavidsTreeFeller and gives information.
+    usage: /tf help
+
+permissions:
+  davidstreefeller.*:
+    description: Gives access to all David's Tree Feller commands.
+    children:
+      davidstreefeller.user: true
+  davidstreefeller.user:
+    description: Allows you to cut down trees faster!
+    default: true
