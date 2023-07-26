@@ -105,7 +105,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             config!!.setValue(STRG_SNEAKING_PREVENTION, sneakingPrevention)
             config!!.saveConfig()
         } catch (e: IOException) {
-            e.printStackTrace()
+            logger.info("Configuration file not created yet. Skipping load.")
         }
     }
 
