@@ -105,7 +105,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             config!!.setValue(STRG_SNEAKING_PREVENTION, sneakingPrevention)
             config!!.saveConfig()
         } catch (e: IOException) {
-            logger.info("Configuration file not created yet. Skipping load.")
+            e.printStackTrace()
         }
     }
 
@@ -189,7 +189,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
                     event.isCancelled = true
                 }
             } catch (e: StackOverflowError) {
-                Bukkit.getLogger().throwing("TreeFeller.java", "onBlockBreak(Event)", e)
+                Bukkit.getLogger().throwing("DavidsTreeFeller.kt", "onBlockBreak(Event)", e)
             }
         }
     }
