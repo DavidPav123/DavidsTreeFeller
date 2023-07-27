@@ -1,2 +1,2 @@
 # DavidsTreeFeller
-A minecraft server plugin that allows you to chop down a whole tree by breaking the base block.
+A fork of https://github.com/Cristichi/CrisTreeCapitator that removes unnecessary features. Also rewitter in Kotlin and built with gradle instead of maven.
