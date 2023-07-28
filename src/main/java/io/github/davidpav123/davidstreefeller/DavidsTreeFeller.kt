@@ -30,9 +30,9 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
     private val header = mainColor.toString() + "[" + desc.name + "] " + textColor
 
     // Messages
-    private val joinMensajeActivated =
+    private val joinMessageActivated =
         header + "Remember " + accentColor + "{player}" + textColor + ", you can use " + accentColor + "/tf toggle" + textColor + " to avoid breaking things made of logs."
-    private val joinMensajeDeactivated =
+    private val joinMessageDeactivated =
         header + "Remember " + accentColor + "{player}" + textColor + ", you can use " + accentColor + "/tf toggle" + textColor + " to cut down trees faster."
 
     // Files
@@ -123,8 +123,8 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             for (meta in metas) {
                 enabled = meta.asBoolean()
             }
-            if (enabled) p.sendMessage(joinMensajeActivated.replace("{player}", p.displayName)) else p.sendMessage(
-                joinMensajeDeactivated.replace("{player}", p.displayName)
+            if (enabled) p.sendMessage(joinMessageActivated.replace("{player}", p.displayName)) else p.sendMessage(
+                joinMessageDeactivated.replace("{player}", p.displayName)
             )
         }
     }
@@ -333,7 +333,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
         }
         val noPerms = false
         if (good) {
-            if (args.size > 0) {
+            if (args.isNotEmpty()) {
                 when (args[0].lowercase(Locale.getDefault())) {
                     "help" -> sender.sendMessage(
                         header + "Commands:\n",
@@ -499,7 +499,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             }
             for (wood in woods) {
                 treeMap!![wood] = ArrayList(
-                    Arrays.asList(
+                    listOf(
                         Material.DIRT,
                         Material.GRASS_BLOCK,
                         Material.COARSE_DIRT,
@@ -515,8 +515,8 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             treeMap!![Material.MANGROVE_LOG]!!.add(Material.CLAY)
         }
         if (admitNetherTrees && !treeMap!!.containsKey(Material.WARPED_STEM)) {
-            treeMap!![Material.WARPED_STEM] = java.util.List.of(Material.WARPED_NYLIUM)
-            treeMap!![Material.CRIMSON_STEM] = java.util.List.of(Material.CRIMSON_NYLIUM)
+            treeMap!![Material.WARPED_STEM] = listOf(Material.WARPED_NYLIUM).toMutableList()
+            treeMap!![Material.CRIMSON_STEM] = listOf(Material.CRIMSON_NYLIUM).toMutableList()
         } else if (!admitNetherTrees && treeMap!!.containsKey(Material.WARPED_STEM)) {
             treeMap!!.remove(Material.WARPED_STEM)
             treeMap!!.remove(Material.CRIMSON_STEM)
@@ -533,10 +533,10 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
         private const val DESC_AXE_NEEDED = "Sets if an axe is required to Cut down trees at once."
         private const val STRG_DAMAGE_AXE = "damage axe"
         private const val DESC_DAMAGE_AXE =
-            "If \"" + STRG_AXE_NEEDED + "\" is set to true, sets if axes used are damaged or not. If \"" + STRG_AXE_NEEDED + "\" is false, this option is ignored."
+            "If \"$STRG_AXE_NEEDED\" is set to true, sets if axes used are damaged or not. If \"$STRG_AXE_NEEDED\" is false, this option is ignored."
         private const val STRG_BREAK_AXE = "break axe"
         private const val DESC_BREAK_AXE =
-            "If \"" + STRG_AXE_NEEDED + "\" and \"" + STRG_DAMAGE_AXE + "\" are set to true, sets if the axe should not be broken. Otherwise this option is ignored."
+            "If \"$STRG_AXE_NEEDED\" and \"$STRG_DAMAGE_AXE\" are set to true, sets if the axe should not be broken. Otherwise this option is ignored."
         private const val STRG_REPLANT = "replant"
         private const val DESC_REPLANT = "Sets if trees should be replanted automatically."
         private const val STRG_INVINCIBLE_REPLANT = "invincible replant"
@@ -551,7 +551,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             "Sets if this plugin starts activated for players when they enter the server. If false, players will need to use /tf toggle to activate it for themselves."
         private const val STRG_JOIN_MSG = "initial message"
         private const val DESC_JOIN_MSG =
-            "If true, it sends each player a message about /tf toggle when they join the server. The message changes depending on the value of \"" + STRG_START_ACTIVATED + "\"."
+            "If true, it sends each player a message about /tf toggle when they join the server. The message changes depending on the value of \"$STRG_START_ACTIVATED\"."
         private const val STRG_IGNORE_LEAVES = "ignore leaves"
         private const val DESC_IGNORE_LEAVES =
             "If true, leaves will not be destroyed and will not connect logs. In vanilla terrain forests this will prevent several trees to be cut down at once, but it will leave most big oak trees floating."
