@@ -1,6 +1,6 @@
 name: DavidsTreeFeller
 version: 1.0
-main: io.github.davidpav123.davidstreefeller.DavidsTreeFeller
+main: com.github.davidpav123.davidstreefeller.DavidsTreeFeller
 description: A plugin that allows you to chop down a whole tree by breaking the bottom block.
 author: DavidPav
 api-version: '1.20'
