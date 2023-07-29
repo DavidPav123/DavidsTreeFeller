@@ -8,7 +8,6 @@ group = 'com.github.davidpav123'
 version = '1.0'
 
 repositories {
-    jcenter()
     mavenCentral()
     maven {
         name = "papermc-repo"
