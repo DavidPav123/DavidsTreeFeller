@@ -264,11 +264,11 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
         if (stop || maxBlocks in 1..<destroyed) return destroyed
         val material = lego.blockData.material
         if (isLog(material) || isLeaves(material)) {
-            val mundo = lego.world
+            val world = lego.world
             val x = lego.x
             val y = lego.y
             val z = lego.z
-            val below = mundo.getBlockAt(x, y - 1, z)
+            val below = world.getBlockAt(x, y - 1, z)
             if (canPlant(below, lego.type)) {
                 var saplingType: Material? = null
                 when (lego.type) {
@@ -310,25 +310,25 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
                 }
             }
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x, y - 1, z), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x, y - 1, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x, y + 1, z), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x, y + 1, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x + 1, y, z + 1), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x + 1, y, z + 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x + 1, y, z - 1), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x + 1, y, z - 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x - 1, y, z + 1), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x - 1, y, z + 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x - 1, y, z - 1), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x - 1, y, z - 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x + 1, y, z), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x + 1, y, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x, y, z + 1), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x, y, z + 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x - 1, y, z), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x - 1, y, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecReplant(player, tool, mundo.getBlockAt(x, y, z - 1), type, destroyed, stop)
+                breakRecReplant(player, tool, world.getBlockAt(x, y, z - 1), type, destroyed, stop)
         }
         return destroyed
     }
@@ -568,7 +568,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
         // Options
         private const val STRG_MAX_BLOCKS = "destroy limit"
         private const val DESC_MAX_BLOCKS =
-            "Sets the maximum number of logs and leaves that can be destroyed at once. -1 to unlimit."
+            "Sets the maximum number of logs and leaves that can be destroyed at once. -1 to unlimited."
         private const val STRG_AXE_NEEDED = "axe needed"
         private const val DESC_AXE_NEEDED = "Sets if an axe is required to Cut down trees at once."
         private const val STRG_DAMAGE_AXE = "damage axe"
