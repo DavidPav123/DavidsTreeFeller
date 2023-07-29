@@ -1,125 +1,122 @@
-package com.github.davidpav123.davidstreefeller;
+package com.github.davidpav123.davidstreefeller
 
-import java.io.*;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.io.*
+import java.util.*
 
-public class Configuration extends File implements Cloneable {
-    @Serial
-    private static final long serialVersionUID = 115L;
+class Configuration(file: String?, header: String?) : File(file.toString()), Cloneable {
+    private val header: String?
+    private val hm: HashMap<String, String> = HashMap()
+    private val info: HashMap<String, String> = HashMap()
 
-    private final String header;
-    private final HashMap<String, String> hm;
-    private final HashMap<String, String> info;
-
-    public Configuration(String file, String header) {
-        super(file);
-        hm = new HashMap<>();
-        info = new HashMap<>();
-        this.header = header;
+    init {
+        this.header = header
     }
 
-    public void setValue(String key, Object value) {
-        hm.put(key, value.toString());
+    fun setValue(key: String, value: Any) {
+        hm[key] = value.toString()
     }
 
-    public String getString(String key, String defaultValue) {
-        return hm.getOrDefault(key, defaultValue);
+    fun getString(key: String, defaultValue: String): String {
+        return hm.getOrDefault(key, defaultValue)
     }
 
-    public int getInt(String key, int defaultValue) {
-        String str = hm.getOrDefault(key, String.valueOf(defaultValue));
-        try {
-            return Integer.parseInt(str);
-        } catch (NumberFormatException e) {
-            System.err.println("Error trying to get integer value from config file");
-            System.err.println("(Value \"" + str + "\" could not be parsed to integer)");
-            return defaultValue;
+    fun getInt(key: String, defaultValue: Int): Int {
+        val str = hm.getOrDefault(key, defaultValue.toString())
+        return try {
+            str.toInt()
+        } catch (e: NumberFormatException) {
+            System.err.println("Error trying to get integer value from config file")
+            System.err.println("(Value \"$str\" could not be parsed to integer)")
+            defaultValue
         }
     }
 
-    public boolean getBoolean(String key, boolean defaultValue) {
-        String str = hm.getOrDefault(key, String.valueOf(defaultValue));
-        switch (str) {
-            case "true", "yes" -> {
-                return true;
+    fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        return when (val str = hm.getOrDefault(key, defaultValue.toString())) {
+            "true", "yes" -> {
+                true
             }
-            case "false", "no" -> {
-                return false;
+
+            "false", "no" -> {
+                false
             }
-            default -> {
-                System.err.println("Error trying to get boolean value from config file");
-                System.err.println("(Value \"" + str + "\" could not be parsed to boolean)");
-                return defaultValue;
+
+            else -> {
+                System.err.println("Error trying to get boolean value from config file")
+                System.err.println("(Value \"$str\" could not be parsed to boolean)")
+                defaultValue
             }
         }
     }
 
-    public void setInfo(String key, String info) {
-        this.info.put(key, info);
+    fun setInfo(key: String, info: String) {
+        this.info[key] = info
     }
 
-    public void saveConfig() throws IOException {
-        StringBuilder configTxt = new StringBuilder(header == null ? "" : "#\t" + header + "\n\n");
-        Set<String> keys = hm.keySet();
-        for (String key : keys) {
-            String value = hm.get(key);
-            String info = this.info.get(key);
+    @Throws(IOException::class)
+    fun saveConfig() {
+        val configTxt = StringBuilder(if (header == null) "" else "#\t$header\n\n")
+        val keys: Set<String> = hm.keys
+        for (key in keys) {
+            val value = hm[key]
+            val info = info[key]
             if (info != null) {
-                configTxt.append("#").append(info).append("\n");
+                configTxt.append("#").append(info).append("\n")
             }
-            configTxt.append(key).append(": ").append(value).append("\n\n");
+            configTxt.append(key).append(": ").append(value).append("\n\n")
         }
-
         if (exists()) {
-            delete();
+            delete()
         }
         try {
-            getParentFile().mkdirs();
-        } catch (NullPointerException ignored) {
+            getParentFile().mkdirs()
+        } catch (ignored: NullPointerException) {
         }
-        createNewFile();
-        BufferedWriter writer = new BufferedWriter(new FileWriter(this));
-        writer.write(configTxt.toString());
-        writer.close();
+        createNewFile()
+        val writer = BufferedWriter(FileWriter(this))
+        writer.write(configTxt.toString())
+        writer.close()
     }
 
-    public void reloadConfig() {
+    fun reloadConfig() {
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(this));
-            String line;
-            int cont = 0;
-            while ((line = reader.readLine()) != null) {
-                cont++;
-                line = line.trim();
-                if (!line.startsWith("#") && !line.trim().isEmpty()) {
-                    StringTokenizer st = new StringTokenizer(line, ":");
+            val reader = BufferedReader(FileReader(this))
+            var line: String
+            var cont = 0
+            while (reader.readLine().also { line = it } != null) {
+                cont++
+                line = line.trim { it <= ' ' }
+                if (!line.startsWith("#") && line.trim { it <= ' ' }.isNotEmpty()) {
+                    val st = StringTokenizer(line, ":")
                     if (st.countTokens() != 2) {
-                        reader.close();
-                        throw new IOException("Looks like the file content is not correct. Broken line " + cont + " (" + st.countTokens() + " tokens, should be 2)");
+                        reader.close()
+                        throw IOException("Looks like the file content is not correct. Broken line " + cont + " (" + st.countTokens() + " tokens, should be 2)")
                     }
-                    String key = st.nextToken().trim();
-                    String value = st.nextToken().trim();
-                    setValue(key, value);
+                    val key = st.nextToken().trim { it <= ' ' }
+                    val value = st.nextToken().trim { it <= ' ' }
+                    setValue(key, value)
                 }
             }
-            reader.close();
-        } catch (FileNotFoundException e) {
-            System.err.println("Configuration file not created yet. Skipping load.");
-        } catch (IOException e) {
-            e.printStackTrace();
+            reader.close()
+        } catch (e: FileNotFoundException) {
+            System.err.println("Configuration file not created yet. Skipping load.")
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        catch (_: NullPointerException){
         }
     }
 
-    @Override
-    public Configuration clone() {
-        try {
-            Configuration clone = (Configuration) super.clone();
-            // TODO: copy mutable state here, so the clone can't change the internals of the original
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
+    public override fun clone(): Configuration {
+        return try {
+            super.clone() as Configuration
+        } catch (e: CloneNotSupportedException) {
+            throw AssertionError()
         }
+    }
+
+    companion object {
+        @Serial
+        private val serialVersionUID = 115L
     }
 }
