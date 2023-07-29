@@ -25,14 +25,12 @@ class Configuration(file: String?, header: String?) : File(file.toString()), Clo
         return try {
             str.toInt()
         } catch (e: NumberFormatException) {
-            System.err.println("Error trying to get integer value from config file")
-            System.err.println("(Value \"$str\" could not be parsed to integer)")
             defaultValue
         }
     }
 
     fun getBoolean(key: String, defaultValue: Boolean): Boolean {
-        return when (val str = hm.getOrDefault(key, defaultValue.toString())) {
+        return when (hm.getOrDefault(key, defaultValue.toString())) {
             "true", "yes" -> {
                 true
             }
@@ -42,8 +40,6 @@ class Configuration(file: String?, header: String?) : File(file.toString()), Clo
             }
 
             else -> {
-                System.err.println("Error trying to get boolean value from config file")
-                System.err.println("(Value \"$str\" could not be parsed to boolean)")
                 defaultValue
             }
         }
@@ -98,12 +94,10 @@ class Configuration(file: String?, header: String?) : File(file.toString()), Clo
                 }
             }
             reader.close()
-        } catch (e: FileNotFoundException) {
-            System.err.println("Configuration file not created yet. Skipping load.")
+        } catch (_: FileNotFoundException) {
         } catch (e: IOException) {
             e.printStackTrace()
-        }
-        catch (_: NullPointerException){
+        } catch (_: NullPointerException) {
         }
     }
 
