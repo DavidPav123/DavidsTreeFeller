@@ -111,4 +111,15 @@ public class Configuration extends File implements Cloneable {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public Configuration clone() {
+        try {
+            Configuration clone = (Configuration) super.clone();
+            // TODO: copy mutable state here, so the clone can't change the internals of the original
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
 }

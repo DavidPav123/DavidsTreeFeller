@@ -1,6 +1,12 @@
 package com.github.davidpav123.davidstreefeller
 
-import org.bukkit.*
+import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
+import org.bukkit.GameMode
+import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.block.Block
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -19,23 +25,11 @@ import java.io.IOException
 import java.util.*
 
 class DavidsTreeFeller : JavaPlugin(), Listener {
-    private val desc = description
-
-    // Colors
-    private val mainColor = ChatColor.BLUE
-    private val textColor = ChatColor.WHITE
-    private val accentColor = ChatColor.GOLD
-    private val errorColor = ChatColor.DARK_RED
-    private val header = mainColor.toString() + "[" + desc.name + "] " + textColor
-
-    // Messages
-    private val joinMessageActivated =
-        header + "Remember " + accentColor + "{player}" + textColor + ", you can use " + accentColor + "/tf toggle" + textColor + " to avoid breaking things made of logs."
-    private val joinMessageDeactivated =
-        header + "Remember " + accentColor + "{player}" + textColor + ", you can use " + accentColor + "/tf toggle" + textColor + " to cut down trees faster."
+    private val header = Component.text(name).color(NamedTextColor.BLUE)
 
     // Files
     private var config: Configuration? = null
+    private var currentAudience: Audience? = null
     private var maxBlocks = -1
     private var axeNeeded = true
     private var damageAxe = true
@@ -48,11 +42,11 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
     private var ignoreLeaves = false
     private var sneakingPrevention = "false"
     private var treeMap: HashMap<Material, MutableList<Material>>? = null
+
     override fun onEnable() {
         server.pluginManager.registerEvents(this, this)
         config = Configuration(
-            "plugins/DavidsTreeFeller/config.yml",
-            "Davids Tree Feller"
+            "plugins/DavidsTreeFeller/config.yml", "Davids Tree Feller"
         )
         loadConfiguration()
         saveConfiguration()
@@ -112,8 +106,8 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
     }
 
     override fun onDisable() {
-        logger.info("Disabled")
         saveConfig()
+        logger.info("Disabled")
     }
 
     @EventHandler
@@ -125,9 +119,25 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             for (meta in metas) {
                 enabled = meta.asBoolean()
             }
-            if (enabled) p.sendMessage(joinMessageActivated.replace("{player}", p.displayName)) else p.sendMessage(
-                joinMessageDeactivated.replace("{player}", p.displayName)
-            )
+            val playerName = p.name
+            if (enabled) {
+                p.sendMessage(
+                    Component.text("Remember ").color(NamedTextColor.BLUE)
+                        .append(Component.text(playerName).color(NamedTextColor.GOLD))
+                        .append(Component.text(", you can use ", NamedTextColor.WHITE))
+                        .append(Component.text("/tf toggle", NamedTextColor.GOLD))
+                        .append(Component.text(" to avoid breaking things made of logs.", NamedTextColor.WHITE))
+                )
+            } else {
+                p.sendMessage(
+                    Component.text("Remember ").color(NamedTextColor.BLUE)
+                        .append(Component.text(playerName).color(NamedTextColor.GOLD))
+                        .append(Component.text(", you can use ", NamedTextColor.WHITE))
+                        .append(Component.text("/tf toggle", NamedTextColor.GOLD))
+                        .append(Component.text(" to cut down trees faster.", NamedTextColor.WHITE))
+                )
+            }
+
         }
     }
 
@@ -151,7 +161,12 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
                     val actual = System.currentTimeMillis()
                     val metasMsg = player.getMetadata("msged")
                     if (metasMsg.isEmpty() || actual - 5000 > metasMsg[0].asLong()) {
-                        player.sendMessage(header + "This sapling is protected, please don't try to break it.")
+                        player.sendMessage(
+                            header.append(
+                                Component.text("This sapling is protected, please don't try to break it.")
+                                    .color(NamedTextColor.WHITE)
+                            )
+                        )
                         player.setMetadata("msged", FixedMetadataValue(this, actual))
                     }
                     event.isCancelled = true
@@ -338,9 +353,14 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             if (args.isNotEmpty()) {
                 when (args[0].lowercase(Locale.getDefault())) {
                     "help" -> sender.sendMessage(
-                        header + "Commands:\n",
-                        accentColor.toString() + "/" + label + " help: " + textColor + "Shows this help message.",
-                        accentColor.toString() + "/" + label + " toggle <true/false>: " + textColor + "Toggles tree felling on and off."
+                        header.append(Component.text(" Commands:\n").color(NamedTextColor.WHITE))
+                            .append(Component.text("/$label help: ").color(NamedTextColor.GOLD)).append(
+                                Component.text("Shows this help message.\n").color(NamedTextColor.WHITE).append(
+                                    Component.text("/$label toggle <true/false>: ").color(NamedTextColor.GOLD)
+                                ).append(
+                                    Component.text("Toggles tree felling on and off.").color(NamedTextColor.WHITE)
+                                )
+                            )
                     )
 
                     "toggle" -> {
@@ -352,20 +372,40 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
                             }
                             enabled = !enabled
                             sender.setMetadata(PLAYER_ENABLE_META, FixedMetadataValue(this, enabled))
-                            sender.sendMessage(header + " You " + (if (enabled) "enabled" else "disabled") + " tree felling.")
+                            sender.sendMessage(
+                                header.append(
+                                    Component.text(" You " + (if (enabled) "enabled" else "disabled") + " tree felling.")
+                                        .color(NamedTextColor.WHITE)
+                                )
+                            )
                         } else {
-                            sender.sendMessage(header + "This command can only be used by players")
+                            sender.sendMessage(
+                                header.append(
+                                    Component.text("This command can only be used by players")
+                                        .color(NamedTextColor.WHITE)
+                                )
+                            )
                         }
                     }
 
-                    else -> sender.sendMessage(header + errorColor + "Command not found, please check \"/" + label + " help\".")
+
+                    else -> sender.sendMessage(
+                        header.append(
+                            Component.text("Command not found, please check \\\"/\" + label + \" help\\\".")
+                                .color(NamedTextColor.DARK_RED)
+                        )
+                    )
                 }
             } else {
                 return false
             }
         }
         if (noPerms) {
-            sender.sendMessage(header + errorColor + "You don't have permission to use this command.")
+            sender.sendMessage(
+                header.append(
+                    Component.text("You don't have permission to use this command.").color(NamedTextColor.DARK_RED)
+                )
+            )
         }
         return good
     }
