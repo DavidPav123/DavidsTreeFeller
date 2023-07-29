@@ -220,7 +220,7 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             if (maxBlocks in 1..<destroyed) {
                 return destroyed
             }
-            val mundo = lego.world
+            val world = lego.world
             if (damageItem(player, tool, material)) {
                 stop = true
             } else {
@@ -234,25 +234,25 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
             val y = lego.y
             val z = lego.z
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x, y - 1, z), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x, y - 1, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x, y + 1, z), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x, y + 1, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x + 1, y, z + 1), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x + 1, y, z + 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x + 1, y, z - 1), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x + 1, y, z - 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x - 1, y, z + 1), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x - 1, y, z + 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x - 1, y, z - 1), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x - 1, y, z - 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x + 1, y, z), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x + 1, y, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x, y, z + 1), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x, y, z + 1), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x - 1, y, z), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x - 1, y, z), type, destroyed, stop)
             if (destroyed < maxBlocks || maxBlocks < 0) destroyed =
-                breakRecNoReplant(player, tool, mundo.getBlockAt(x, y, z - 1), type, destroyed, stop)
+                breakRecNoReplant(player, tool, world.getBlockAt(x, y, z - 1), type, destroyed, stop)
         }
         return destroyed
     }
