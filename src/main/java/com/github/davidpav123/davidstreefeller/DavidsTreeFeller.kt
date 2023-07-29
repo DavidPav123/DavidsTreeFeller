@@ -1,6 +1,5 @@
 package com.github.davidpav123.davidstreefeller
 
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -29,7 +28,6 @@ class DavidsTreeFeller : JavaPlugin(), Listener {
 
     // Files
     private var config: Configuration? = null
-    private var currentAudience: Audience? = null
     private var maxBlocks = -1
     private var axeNeeded = true
     private var damageAxe = true
